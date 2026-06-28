@@ -1,7 +1,8 @@
 // Agent loop (spec section 8). Runs in the backend.
 // Read tools execute directly and feed their result back to the model.
-// Write tools pause the loop and return a plan for client-side confirmation;
-// the backend never executes a write and never signs.
+// Write tools validate their arguments and build a proposal, then the loop
+// stops and returns the proposal for client-side confirmation. The backend
+// never signs and never broadcasts.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "./systemPrompt";
@@ -14,9 +15,17 @@ const MAX_TOKENS = 1024;
 // The SDK reads ANTHROPIC_API_KEY from the environment.
 const client = new Anthropic();
 
+// A validated write awaiting user confirmation. proposal is the structured plan
+// the tool returned; toolUse is the original model request the frontend later
+// executes once the user signs.
+export type ProposedWrite = {
+  toolUse: Anthropic.ToolUseBlock;
+  proposal: unknown;
+};
+
 export type AgentResult =
   | { type: "final"; text: string }
-  | { type: "needs_confirmation"; plan: Anthropic.ToolUseBlock[] };
+  | { type: "needs_confirmation"; plan: ProposedWrite[] };
 
 export async function runAgent(
   userMessage: string,
@@ -49,16 +58,36 @@ export async function runAgent(
       (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
     );
 
-    // A write tool moves funds, so stop and hand the plan to the user. Surface
-    // every write block in this turn so the client can confirm them together.
-    const writes = toolUses.filter((block) => tools[block.name]?.type === "write");
-    if (writes.length > 0) {
-      return { type: "needs_confirmation", plan: writes };
+    const proposals: ProposedWrite[] = [];
+    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+
+    for (const block of toolUses) {
+      const tool = tools[block.name];
+      if (!tool) {
+        toolResults.push(errorResult(block.id, `Unknown tool: ${block.name}`));
+        continue;
+      }
+
+      if (tool.type === "write") {
+        // Validate and build the proposal only. Never sign or send here. On a
+        // validation error, feed it back so the model reports it plainly
+        // instead of proposing an invalid action.
+        try {
+          const proposal = await tool.execute(block.input);
+          proposals.push({ toolUse: block, proposal });
+        } catch (error) {
+          toolResults.push(errorResult(block.id, errorMessage(error)));
+        }
+        continue;
+      }
+
+      toolResults.push(await runReadTool(block));
     }
 
-    const toolResults: Anthropic.ToolResultBlockParam[] = [];
-    for (const block of toolUses) {
-      toolResults.push(await runReadTool(block));
+    // A validated write stops the loop: hand the proposal to the user and wait
+    // for client-side confirmation rather than continuing or signing.
+    if (proposals.length > 0) {
+      return { type: "needs_confirmation", plan: proposals };
     }
 
     messages.push({ role: "assistant", content: response.content });
@@ -91,9 +120,12 @@ async function runReadTool(
       content: JSON.stringify(result),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Tool execution failed";
-    return errorResult(block.id, message);
+    return errorResult(block.id, errorMessage(error));
   }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Tool execution failed";
 }
 
 function errorResult(toolUseId: string, message: string): Anthropic.ToolResultBlockParam {

@@ -6,6 +6,7 @@ import { getBalance } from "./getBalance";
 import { getTxHistory, type GetTxHistoryInput } from "./getTxHistory";
 import { getSpending, type GetSpendingInput } from "./getSpending";
 import { resolveContact, type ResolveContactInput } from "./resolveContact";
+import { sendUSDC, type SendUSDCInput } from "./sendUSDC";
 
 export type ToolKind = "read" | "write";
 
@@ -19,4 +20,5 @@ export const tools: Record<string, ToolEntry> = {
   getTxHistory: { type: "read", execute: (input) => getTxHistory(input as GetTxHistoryInput) },
   getSpending: { type: "read", execute: (input) => getSpending(input as GetSpendingInput) },
   resolveContact: { type: "read", execute: (input) => resolveContact(input as ResolveContactInput) },
+  sendUSDC: { type: "write", execute: (input) => sendUSDC(input as SendUSDCInput) },
 };

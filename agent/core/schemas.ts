@@ -54,4 +54,23 @@ export const toolSchemas: Anthropic.Tool[] = [
       required: ["name"],
     },
   },
+  {
+    name: "sendUSDC",
+    description:
+      "Propose a native USDC transfer on Arc. This does not send funds; it returns a plan the user must confirm and sign.",
+    input_schema: {
+      type: "object",
+      properties: {
+        to: {
+          type: "string",
+          description: "Recipient address as a 0x-prefixed hex address.",
+        },
+        amount: {
+          type: "string",
+          description: 'Amount in human USDC, for example "25" or "25.5". Not the wei value.',
+        },
+      },
+      required: ["to", "amount"],
+    },
+  },
 ];
