@@ -7,7 +7,7 @@
 import "dotenv/config";
 import express from "express";
 import { executePlan, runAgent } from "../core";
-import type { ChatMessage, PlanStep } from "../core";
+import type { ChatMessage, PlanStep, TxRequest } from "../core";
 import { buildTestContext } from "./context";
 import { buildTestSigner } from "./signer";
 
@@ -51,6 +51,24 @@ app.post("/api/confirm", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to execute the plan" });
+  }
+});
+
+// Signs and sends a single TxRequest with the .env wallet. The browser Signer
+// calls this so the private key never leaves the server.
+app.post("/api/sign", async (req, res) => {
+  const tx = req.body ?? {};
+  if (typeof tx !== "object" || typeof tx.to !== "string") {
+    res.status(400).json({ error: "a TxRequest with a 'to' address is required" });
+    return;
+  }
+
+  try {
+    const result = await buildTestSigner().signAndSend(tx as TxRequest);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to sign and send the transaction" });
   }
 });
 

@@ -1,0 +1,141 @@
+/* Minimal functional styling for the test shell. No design system. */
+
+:root {
+  --gap: 12px;
+  --border: #cccccc;
+  --muted: #555555;
+  --bg-user: #eef3ff;
+  --bg-assistant: #f3f3f3;
+  --error: #b00020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  line-height: 1.4;
+  color: #111111;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 200px;
+}
+
+.message {
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message.user {
+  background: var(--bg-user);
+}
+
+.message.assistant {
+  background: var(--bg-assistant);
+}
+
+.role {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+form.composer {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.step .title {
+  font-weight: 600;
+}
+
+.step .description {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+}
+
+.result.failed {
+  color: var(--error);
+}
+
+a {
+  color: #0b5fff;
+}
+
+/* Visible keyboard focus for every interactive element. */
+:focus-visible {
+  outline: 2px solid #0b5fff;
+  outline-offset: 2px;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
