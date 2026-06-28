@@ -2,7 +2,7 @@
 // RPC comes from the ARC CLI: run `arc-canteen rpc-url --export` to load it into $RPC.
 // chainId 5042002 (0x4cef52). USDC is native gas with 18 decimals: use parseEther, not 1e6.
 
-import { defineChain } from "viem";
+import { createPublicClient, defineChain, http } from "viem";
 
 export const arc = defineChain({
   id: 5042002,
@@ -12,5 +12,7 @@ export const arc = defineChain({
   blockExplorers: { default: { name: "Arcscan", url: "https://testnet.arcscan.app" } },
 });
 
-// TODO: export a publicClient (createPublicClient). The walletClient is built
-// client-side with the user wallet. The backend never signs.
+// Read-only client for backend reasoning. The RPC URL is carried by the chain
+// config above, which reads process.env.RPC. The walletClient is built
+// client-side with the user wallet; the backend never signs.
+export const publicClient = createPublicClient({ chain: arc, transport: http() });
