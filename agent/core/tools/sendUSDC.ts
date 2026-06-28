@@ -1,26 +1,17 @@
 // Tool sendUSDC (write). Params: to (address), amount (human USDC like "25" or "25.5").
-// Native USDC on Arc has 18 decimals, so amounts parse with parseEther, not 1e6.
-// This function validates and returns a proposal only. Execution and signing
-// happen client-side with the user wallet in a later phase; the backend never
-// sends and never touches keys.
+// It produces a PlanStep for confirmation. It does not compute or emit wei and
+// does not sign: the plan carries the human decimal value, and the signer does
+// parseEther when it builds the on-chain transaction. Native USDC on Arc is the
+// gas token with 18 decimals, so the transfer is a plain value transaction.
 
-import { formatEther, getAddress, parseEther } from "viem";
-import { arc } from "../chain";
-import { getBalance } from "./getBalance";
+import { getAddress, parseEther } from "viem";
+import type { ToolContext } from "../context";
+import type { PlanStep } from "../types";
 import { assertAmountPositive, assertWithinBalance, isValidAddress } from "../validate";
 
 export type SendUSDCInput = { to: string; amount: string };
 
-export type SendUSDCProposal = {
-  action: "sendUSDC";
-  to: string;
-  amountUSDC: string;
-  amountWei: string;
-  feeNote: string;
-  network: string;
-};
-
-export async function sendUSDC(input: SendUSDCInput): Promise<SendUSDCProposal> {
+export async function sendUSDC(ctx: ToolContext, input: SendUSDCInput): Promise<PlanStep> {
   const { to, amount } = input;
 
   if (typeof to !== "string" || !isValidAddress(to)) {
@@ -32,18 +23,19 @@ export async function sendUSDC(input: SendUSDCInput): Promise<SendUSDCProposal> 
 
   const recipient = getAddress(to);
   assertAmountPositive(amount);
-  const amountWei = parseEther(amount);
 
-  // Re-check against the live balance; never trust the model amount unverified.
-  const { balanceUSDC } = await getBalance();
-  assertWithinBalance(amountWei, parseEther(balanceUSDC));
+  // Balance guard (required by the engineering rules): the amount must not
+  // exceed the user balance. The comparison is done in wei for precision using
+  // the injected client; this wei value is never emitted into the plan.
+  const balanceWei = await ctx.publicClient.getBalance({ address: ctx.userAddress });
+  assertWithinBalance(parseEther(amount), balanceWei);
 
   return {
-    action: "sendUSDC",
-    to: recipient,
-    amountUSDC: formatEther(amountWei),
-    amountWei: amountWei.toString(),
-    feeNote: "gas paid in native USDC on Arc",
-    network: arc.name,
+    title: `Send ${amount} USDC`,
+    tx: {
+      to: recipient,
+      value: amount,
+      description: `Send ${amount} USDC to ${recipient} on Arc. Gas is paid in native USDC.`,
+    },
   };
 }

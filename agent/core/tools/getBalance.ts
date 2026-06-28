@@ -1,22 +1,13 @@
 // Tool getBalance (read). Params: none.
-// Returns the user native USDC balance on Arc, where USDC is the native gas
-// token with 18 decimals, so formatEther produces the correct human amount.
+// Returns the native USDC balance of the context user address on Arc, where
+// USDC is the native gas token with 18 decimals, so formatEther is correct.
 
-import { formatEther, getAddress } from "viem";
-import { publicClient } from "../chain";
+import { formatEther } from "viem";
+import type { ToolContext } from "../context";
 
 export type GetBalanceResult = { balanceUSDC: string };
 
-// Temporary: the address is taken from process.env.USER_ADDRESS so the backend
-// can be exercised before the wallet layer exists. Replace this with the
-// connected wallet address passed from the frontend once that layer lands.
-export async function getBalance(): Promise<GetBalanceResult> {
-  const raw = process.env.USER_ADDRESS;
-  if (!raw) {
-    throw new Error("USER_ADDRESS is not set");
-  }
-
-  const address = getAddress(raw);
-  const balanceWei = await publicClient.getBalance({ address });
+export async function getBalance(ctx: ToolContext): Promise<GetBalanceResult> {
+  const balanceWei = await ctx.publicClient.getBalance({ address: ctx.userAddress });
   return { balanceUSDC: formatEther(balanceWei) };
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Venai Agent, natural-language payment agent on Arc (part of Vpay)",
   "scripts": {
-    "dev:server": "tsx watch agent/server/index.ts",
+    "dev:server": "tsx watch agent/testhost/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

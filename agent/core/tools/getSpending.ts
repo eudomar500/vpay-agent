@@ -1,8 +1,9 @@
 // Tool getSpending (read). Param: period ("week" or "month").
-// Sums outgoing USDC (transactions sent by the user) over the period.
+// Sums outgoing USDC (transactions sent by the context user) over the period.
 
 import { formatEther, parseEther } from "viem";
-import { readUserAddress, scanTransactions } from "./history";
+import type { ToolContext } from "../context";
+import { scanTransactions } from "./history";
 
 export type SpendingPeriod = "week" | "month";
 
@@ -24,15 +25,18 @@ const PERIOD_SECONDS: Record<SpendingPeriod, number> = {
   month: 30 * 24 * 60 * 60,
 };
 
-export async function getSpending(input: GetSpendingInput): Promise<GetSpendingResult> {
+export async function getSpending(
+  ctx: ToolContext,
+  input: GetSpendingInput,
+): Promise<GetSpendingResult> {
   const period = input.period;
   if (period !== "week" && period !== "month") {
     throw new Error('period must be "week" or "month"');
   }
 
-  const address = readUserAddress().toLowerCase();
+  const address = ctx.userAddress.toLowerCase();
   const windowBlocks = Math.ceil(PERIOD_SECONDS[period] / ARC_BLOCK_TIME_SECONDS);
-  const records = await scanTransactions(windowBlocks);
+  const records = await scanTransactions(ctx, windowBlocks);
 
   const outgoing = records.filter((tx) => tx.from.toLowerCase() === address);
 
