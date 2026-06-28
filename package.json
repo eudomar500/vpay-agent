@@ -1,0 +1,21 @@
+{
+  "name": "venai-agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Venai Agent, natural-language payment agent on Arc (part of Vpay)",
+  "scripts": {
+    "dev:server": "tsx watch agent/server/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "viem": "latest"
+  },
+  "devDependencies": {
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}
