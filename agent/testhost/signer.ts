@@ -26,20 +26,31 @@ export function buildTestSigner(): Signer {
   const walletClient = createWalletClient({ account, chain: buildChain(ctx), transport: http(ctx.rpcUrl) });
   const publicClient = buildPublicClient(ctx);
 
+  async function send(tx: TxRequest): Promise<TxResult> {
+    try {
+      const hash = await walletClient.sendTransaction({
+        to: tx.to,
+        value: tx.value ? parseEther(tx.value) : 0n,
+        data: tx.data,
+      });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      return { hash, success: receipt.status === "success" };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Transaction failed";
+      return { hash: NO_HASH, success: false, error: message };
+    }
+  }
+
   return {
-    async signAndSend(tx: TxRequest): Promise<TxResult> {
-      try {
-        const hash = await walletClient.sendTransaction({
-          to: tx.to,
-          value: tx.value ? parseEther(tx.value) : 0n,
-          data: tx.data,
-        });
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        return { hash, success: receipt.status === "success" };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Transaction failed";
-        return { hash: NO_HASH, success: false, error: message };
+    signAndSend: send,
+    // Sign and send each transaction in order, waiting for each receipt before
+    // the next so nonces stay sequential. Returns results in plan order.
+    async signAndSendBatch(txs: TxRequest[]): Promise<TxResult[]> {
+      const results: TxResult[] = [];
+      for (const tx of txs) {
+        results.push(await send(tx));
       }
+      return results;
     },
   };
 }

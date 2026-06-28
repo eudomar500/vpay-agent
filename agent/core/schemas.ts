@@ -73,4 +73,30 @@ export const toolSchemas: Anthropic.Tool[] = [
       required: ["to", "amount"],
     },
   },
+  {
+    name: "splitPayment",
+    description:
+      "Propose a native USDC split among several recipients on Arc. Provide exactly one of total (split equally) or each (same amount to everyone); they are mutually exclusive. This does not send funds; it returns a multi-step plan the user must confirm and sign.",
+    input_schema: {
+      type: "object",
+      properties: {
+        recipients: {
+          type: "array",
+          items: { type: "string" },
+          description: "Recipient addresses, each a 0x-prefixed hex address.",
+        },
+        total: {
+          type: "string",
+          description:
+            'Total human USDC to split equally among the recipients, for example "30". Mutually exclusive with each.',
+        },
+        each: {
+          type: "string",
+          description:
+            'Human USDC to send to every recipient, for example "10". Mutually exclusive with total.',
+        },
+      },
+      required: ["recipients"],
+    },
+  },
 ];

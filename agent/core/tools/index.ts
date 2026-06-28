@@ -8,6 +8,7 @@ import { getTxHistory, type GetTxHistoryInput } from "./getTxHistory";
 import { getSpending, type GetSpendingInput } from "./getSpending";
 import { resolveContact, type ResolveContactInput } from "./resolveContact";
 import { sendUSDC, type SendUSDCInput } from "./sendUSDC";
+import { splitPayment, type SplitPaymentInput } from "./splitPayment";
 
 export type ToolKind = "read" | "write";
 
@@ -22,4 +23,5 @@ export const tools: Record<string, ToolEntry> = {
   getSpending: { type: "read", execute: (ctx, input) => getSpending(ctx, input as GetSpendingInput) },
   resolveContact: { type: "read", execute: (_ctx, input) => resolveContact(input as ResolveContactInput) },
   sendUSDC: { type: "write", execute: (ctx, input) => sendUSDC(ctx, input as SendUSDCInput) },
+  splitPayment: { type: "write", execute: (ctx, input) => splitPayment(ctx, input as SplitPaymentInput) },
 };

@@ -61,12 +61,15 @@ export async function runAgent(input: RunAgentInput, ctx: AgentContext): Promise
       }
 
       if (tool.type === "write") {
-        // Validate and build the plan step only. Never sign here. On a
-        // validation error, feed it back so the model reports it plainly
-        // instead of proposing an invalid action.
+        // Validate and build the plan step(s) only. Never sign here. A write
+        // tool returns one step (sendUSDC) or several (splitPayment); both
+        // accumulate into the single confirmation plan, as do multiple write
+        // calls in one turn. On a validation error, feed it back so the model
+        // reports it plainly instead of proposing an invalid action.
         try {
-          const step = (await tool.execute(toolCtx, block.input)) as PlanStep;
-          plan.push(step);
+          const produced = await tool.execute(toolCtx, block.input);
+          const steps = Array.isArray(produced) ? (produced as PlanStep[]) : [produced as PlanStep];
+          plan.push(...steps);
         } catch (error) {
           toolResults.push(errorResult(block.id, errorMessage(error)));
         }
