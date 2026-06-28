@@ -8,6 +8,7 @@ import "dotenv/config";
 import express from "express";
 import { runAgent } from "../core/loop";
 import { executeSend } from "../core/execute";
+import { buildTestSigner } from "../core/signer";
 import type { SendUSDCProposal } from "../core/tools/sendUSDC";
 
 const app = express();
@@ -42,7 +43,10 @@ app.post("/api/confirm", async (req, res) => {
   }
 
   try {
-    const result = await executeSend(proposal as SendUSDCProposal);
+    // Test wiring: the .env wallet signs through buildTestSigner. In production
+    // the container (Vpay) supplies its own signer, implemented with Privy.
+    const signer = buildTestSigner();
+    const result = await executeSend(proposal as SendUSDCProposal, signer);
     res.json(result);
   } catch (error) {
     console.error(error);

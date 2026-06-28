@@ -1,13 +1,15 @@
 // On-chain execution of a confirmed sendUSDC proposal.
-// Test-only: it signs with the backend TEST_PRIVATE_KEY wallet so the full path
-// can be validated. In production the user signs client-side with their own
-// wallet and this module is replaced; the backend never holds a key.
+// The agent never signs. Signing is injected through a Signer (the container
+// app supplies it: the test wallet now, Privy in production). This module only
+// re-validates and dispatches to the signer.
 // Native USDC on Arc is the gas token with 18 decimals, so a transfer is a plain
 // value transaction, not an ERC-20 transfer.
 
-import { getAddress } from "viem";
-import { arc, buildWalletClient, publicClient } from "./chain";
+import { parseEther } from "viem";
+import { arc, publicClient } from "./chain";
+import { getBalance } from "./tools/getBalance";
 import { assertAmountPositive, assertWithinBalance, isValidAddress } from "./validate";
+import type { Signer } from "./signer";
 import type { SendUSDCProposal } from "./tools/sendUSDC";
 
 export type ExecuteSendResult = {
@@ -16,25 +18,27 @@ export type ExecuteSendResult = {
   explorerUrl: string;
 };
 
-export async function executeSend(proposal: SendUSDCProposal): Promise<ExecuteSendResult> {
-  // Re-validate before signing. A proposal handed back from the client is not
-  // trusted: re-check the address, the amount, and the live balance.
+export async function executeSend(
+  proposal: SendUSDCProposal,
+  signer: Signer,
+): Promise<ExecuteSendResult> {
+  // Re-validate before dispatching to the signer. A proposal handed back from
+  // the client is not trusted: re-check the address, the amount, and the live
+  // balance of the user account that funds the transfer.
   if (!isValidAddress(proposal.to)) {
     throw new Error(`Invalid recipient address: ${String(proposal.to)}`);
   }
   assertAmountPositive(proposal.amountUSDC);
 
-  const to = getAddress(proposal.to);
   const amountWei = BigInt(proposal.amountWei);
+  const { balanceUSDC } = await getBalance();
+  assertWithinBalance(amountWei, parseEther(balanceUSDC));
 
-  const walletClient = buildWalletClient();
-  const sender = walletClient.account.address;
+  const hash = await signer.signAndSend({ to: proposal.to, value: amountWei });
 
-  const balanceWei = await publicClient.getBalance({ address: sender });
-  assertWithinBalance(amountWei, balanceWei);
-
-  const hash = await walletClient.sendTransaction({ to, value: amountWei });
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  // The signer returns once it has a hash. Read the receipt here so status is
+  // reported even when a production signer resolves before the tx is mined.
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
 
   return {
     hash,
