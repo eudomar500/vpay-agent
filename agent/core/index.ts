@@ -4,11 +4,15 @@
 
 export { runAgent } from "./loop";
 export { executePlan } from "./execute";
+export type { SwapExecutor } from "./execute";
 export type {
   TxRequest,
   TxResult,
   ChatMessage,
   PlanStep,
+  SwapToken,
+  SwapStep,
+  PlanItem,
   AgentContext,
   Signer,
   AgentResult,

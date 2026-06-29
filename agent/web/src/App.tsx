@@ -4,14 +4,15 @@
 
 import { useState } from "react";
 import { executePlan } from "../../core/execute";
-import type { ChatMessage, PlanStep, TxResult } from "../../core/types";
+import type { ChatMessage, PlanItem, TxResult } from "../../core/types";
 import { postAgent } from "./api";
 import { testSigner } from "./signer";
+import { browserSwapExecutor } from "./swapExecutor";
 import { Chat } from "./components/Chat";
 import { PlanConfirm } from "./components/PlanConfirm";
 import { TxResultView } from "./components/TxResultView";
 
-type Pending = { plan: PlanStep[] } | null;
+type Pending = { plan: PlanItem[] } | null;
 
 export function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -54,7 +55,7 @@ export function App() {
     setError(null);
     setBusy(true);
     try {
-      const txResults = await executePlan(pending.plan, testSigner);
+      const txResults = await executePlan(pending.plan, testSigner, browserSwapExecutor);
       setResults(txResults);
       appendAssistant(summarize(txResults));
       setPending(null);

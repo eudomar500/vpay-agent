@@ -25,6 +25,27 @@ export interface PlanStep {
   tx: TxRequest;
 }
 
+// Tokens supported for swap on Arc Testnet (Circle App Kit).
+export type SwapToken = "USDC" | "EURC" | "cirBTC";
+
+// A swap is not a transfer: it has no single recipient and no value in the
+// TxRequest sense, so it does not fit TxRequest (to + value). It is carried as
+// its own step kind, discriminated by `kind`. Vpay integration will need a
+// dedicated swap type in the contract to coordinate this with the container;
+// for this test the type lives here.
+export interface SwapStep {
+  kind: "swap";
+  fromToken: SwapToken;
+  toToken: SwapToken;
+  amount: string;
+  description: string;
+}
+
+// A confirmation plan may mix transfer steps (PlanStep) and swap steps
+// (SwapStep). PlanStep carries no `kind`, so the presence of `kind` discriminates
+// a swap step from a transfer step.
+export type PlanItem = PlanStep | SwapStep;
+
 export interface AgentContext {
   rpcUrl: string;
   userAddress: `0x${string}`;
@@ -39,4 +60,4 @@ export interface Signer {
 
 export type AgentResult =
   | { type: "final"; text: string }
-  | { type: "needs_confirmation"; text: string; plan: PlanStep[] };
+  | { type: "needs_confirmation"; text: string; plan: PlanItem[] };

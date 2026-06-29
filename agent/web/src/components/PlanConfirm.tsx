@@ -1,11 +1,11 @@
-// Renders a proposed plan for confirmation. Each step shows its title and the
-// human-readable tx.description. Confirm runs the plan through the signer;
-// Cancel discards it without signing.
+// Renders a proposed plan for confirmation. A plan may mix transfer steps and
+// swap steps; each is shown with a title and a human-readable description.
+// Confirm runs the whole plan; Cancel discards it without signing.
 
-import type { PlanStep } from "../../../core/types";
+import type { PlanItem } from "../../../core/types";
 
 type PlanConfirmProps = {
-  plan: PlanStep[];
+  plan: PlanItem[];
   onConfirm: () => void;
   onCancel: () => void;
   busy: boolean;
@@ -14,12 +14,15 @@ type PlanConfirmProps = {
 export function PlanConfirm({ plan, onConfirm, onCancel, busy }: PlanConfirmProps) {
   return (
     <div className="panel" aria-label="Proposed plan">
-      {plan.map((step, index) => (
-        <div className="step" key={index}>
-          <div className="title">{step.title}</div>
-          <div className="description">{step.tx.description}</div>
-        </div>
-      ))}
+      {plan.map((step, index) => {
+        const lines = stepLines(step);
+        return (
+          <div className="step" key={index}>
+            <div className="title">{lines.title}</div>
+            <div className="description">{lines.description}</div>
+          </div>
+        );
+      })}
       <div className="actions">
         <button type="button" onClick={onConfirm} disabled={busy}>
           Confirm
@@ -30,4 +33,15 @@ export function PlanConfirm({ plan, onConfirm, onCancel, busy }: PlanConfirmProp
       </div>
     </div>
   );
+}
+
+// A swap step carries its own description; a transfer step describes its tx.
+function stepLines(step: PlanItem): { title: string; description: string } {
+  if ("kind" in step && step.kind === "swap") {
+    return {
+      title: `Swap ${step.amount} ${step.fromToken} for ${step.toToken}`,
+      description: step.description,
+    };
+  }
+  return { title: step.title, description: step.tx.description };
 }

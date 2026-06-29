@@ -9,6 +9,7 @@ import { getSpending, type GetSpendingInput } from "./getSpending";
 import { resolveContact, type ResolveContactInput } from "./resolveContact";
 import { sendUSDC, type SendUSDCInput } from "./sendUSDC";
 import { splitPayment, type SplitPaymentInput } from "./splitPayment";
+import { swapTokens, type SwapTokensInput } from "./swapTokens";
 
 export type ToolKind = "read" | "write";
 
@@ -24,4 +25,5 @@ export const tools: Record<string, ToolEntry> = {
   resolveContact: { type: "read", execute: (_ctx, input) => resolveContact(input as ResolveContactInput) },
   sendUSDC: { type: "write", execute: (ctx, input) => sendUSDC(ctx, input as SendUSDCInput) },
   splitPayment: { type: "write", execute: (ctx, input) => splitPayment(ctx, input as SplitPaymentInput) },
+  swapTokens: { type: "write", execute: (ctx, input) => swapTokens(ctx, input as SwapTokensInput) },
 };

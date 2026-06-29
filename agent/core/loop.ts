@@ -8,7 +8,7 @@ import { SYSTEM_PROMPT } from "./systemPrompt";
 import { toolSchemas } from "./schemas";
 import { tools } from "./tools";
 import { buildToolContext, type ToolContext } from "./context";
-import type { AgentContext, AgentResult, ChatMessage, PlanStep } from "./types";
+import type { AgentContext, AgentResult, ChatMessage, PlanItem } from "./types";
 
 const MAX_ITERATIONS = 8;
 const MAX_TOKENS = 1024;
@@ -50,7 +50,7 @@ export async function runAgent(input: RunAgentInput, ctx: AgentContext): Promise
       (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
     );
 
-    const plan: PlanStep[] = [];
+    const plan: PlanItem[] = [];
     const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
     for (const block of toolUses) {
@@ -68,7 +68,7 @@ export async function runAgent(input: RunAgentInput, ctx: AgentContext): Promise
         // reports it plainly instead of proposing an invalid action.
         try {
           const produced = await tool.execute(toolCtx, block.input);
-          const steps = Array.isArray(produced) ? (produced as PlanStep[]) : [produced as PlanStep];
+          const steps = Array.isArray(produced) ? (produced as PlanItem[]) : [produced as PlanItem];
           plan.push(...steps);
         } catch (error) {
           toolResults.push(errorResult(block.id, errorMessage(error)));

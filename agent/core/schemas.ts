@@ -99,4 +99,29 @@ export const toolSchemas: Anthropic.Tool[] = [
       required: ["recipients"],
     },
   },
+  {
+    name: "swapTokens",
+    description:
+      "Propose a token swap on Arc Testnet using Circle App Kit. Supported tokens are USDC, EURC, and cirBTC. This does not execute the swap; it returns a plan the user must confirm.",
+    input_schema: {
+      type: "object",
+      properties: {
+        fromToken: {
+          type: "string",
+          enum: ["USDC", "EURC", "cirBTC"],
+          description: "Token to swap from. One of USDC, EURC, cirBTC.",
+        },
+        toToken: {
+          type: "string",
+          enum: ["USDC", "EURC", "cirBTC"],
+          description: "Token to receive. One of USDC, EURC, cirBTC, different from fromToken.",
+        },
+        amount: {
+          type: "string",
+          description: 'Amount of fromToken to swap, human decimal, for example "1" or "1.5".',
+        },
+      },
+      required: ["fromToken", "toToken", "amount"],
+    },
+  },
 ];
