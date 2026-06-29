@@ -1,5 +1,7 @@
-// Shows the result of each executed transaction: success state, the hash with a
-// link to the Arc explorer, and the error when one was returned.
+// Shows the result of each executed transaction. A confirmed result links to the
+// Arc explorer; a failed result shows only its short readable error. The error
+// string is already cleaned by the signer, so this renders plain text with no
+// JSON, stack, or multi-line dump.
 
 import type { TxResult } from "../../../core/types";
 
@@ -16,19 +18,22 @@ type TxResultViewProps = {
 export function TxResultView({ results }: TxResultViewProps) {
   return (
     <div className="panel" aria-label="Transaction results">
-      {results.map((result, index) => (
-        <div className={`result ${result.success ? "ok" : "failed"}`} key={index}>
-          <div>{result.success ? "Confirmed" : "Failed"}</div>
-          {result.hash !== ZERO_HASH ? (
-            <div>
-              <a href={`${EXPLORER_TX}/${result.hash}`} target="_blank" rel="noreferrer">
-                {result.hash}
-              </a>
-            </div>
-          ) : null}
-          {result.error ? <div className="error">{result.error}</div> : null}
-        </div>
-      ))}
+      {results.map((result, index) => {
+        const hasHash = result.hash !== ZERO_HASH;
+        return (
+          <div className={`result ${result.success ? "ok" : "failed"}`} key={index}>
+            <div>{result.success ? "Confirmed" : "Failed"}</div>
+            {hasHash ? (
+              <div>
+                <a href={`${EXPLORER_TX}/${result.hash}`} target="_blank" rel="noreferrer">
+                  {result.hash}
+                </a>
+              </div>
+            ) : null}
+            {!result.success && result.error ? <div className="error">{result.error}</div> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
